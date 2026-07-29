@@ -88,11 +88,22 @@ export function createThreadOutboxManager(options: ThreadOutboxManagerOptions) {
     return loadPromise;
   };
 
-  const enqueue = (message: QueuedThreadMessage): Promise<void> =>
-    serialize(async () => {
+  // The queued atom drives the composer's immediate "queued" feedback, so it
+  // is published synchronously; the durable write happens behind it and rolls
+  // the message back out if it fails (durability only matters for crash
+  // recovery, not for the in-session queue).
+  const enqueue = (message: QueuedThreadMessage): Promise<void> => {
+    setMessages([
+      ...currentMessages().filter((candidate) => candidate.messageId !== message.messageId),
+      message,
+    ]);
+    return serialize(async () => {
       try {
         await options.storage.write(message);
       } catch (cause) {
+        setMessages(
+          currentMessages().filter((candidate) => candidate.messageId !== message.messageId),
+        );
         throw new ThreadOutboxManagerError({
           operation: "enqueue",
           environmentId: message.environmentId,
@@ -101,11 +112,8 @@ export function createThreadOutboxManager(options: ThreadOutboxManagerOptions) {
           cause,
         });
       }
-      setMessages([
-        ...currentMessages().filter((candidate) => candidate.messageId !== message.messageId),
-        message,
-      ]);
     });
+  };
 
   // Rewrites an already-queued message. A no-op when the message has been
   // removed in the meantime (e.g. deleted or delivered), so a trailing editor
