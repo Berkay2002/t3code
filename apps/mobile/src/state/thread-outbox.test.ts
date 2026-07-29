@@ -357,6 +357,48 @@ describe("thread outbox", () => {
     registry.dispose();
   });
 
+  it("keeps a same-id retry queued when the first attempt's write fails", async () => {
+    const registry = AtomRegistry.make();
+    let failNextWrite = true;
+    let releaseFirstWrite!: () => void;
+    const firstWriteBlocked = new Promise<void>((resolve) => {
+      releaseFirstWrite = resolve;
+    });
+    const manager = createThreadOutboxManager({
+      registry,
+      storage: {
+        load: async () => [],
+        write: async () => {
+          if (failNextWrite) {
+            failNextWrite = false;
+            await firstWriteBlocked;
+            throw new Error("disk full");
+          }
+        },
+        remove: async () => undefined,
+      },
+    });
+    const message = queuedMessage({
+      messageId: "message-1",
+      createdAt: "2026-06-08T10:00:01.000Z",
+    });
+    const retried = { ...message, text: "retried" };
+
+    const first = manager.enqueue(message);
+    const second = manager.enqueue(retried);
+    releaseFirstWrite();
+    await expect(first).rejects.toBeInstanceOf(ThreadOutboxManagerError);
+    await second;
+
+    // The failed first attempt must not roll back the retry that replaced it.
+    expect(registry.get(manager.queuedMessagesByThreadKeyAtom)).toEqual({
+      "environment-1:thread-1": [retried],
+    });
+    await expect(manager.confirmQueued(retried)).resolves.toBe(true);
+    await expect(manager.confirmQueued(message)).resolves.toBe(false);
+    registry.dispose();
+  });
+
   it("replaces an existing message when an enqueue retry uses the same id", async () => {
     const registry = AtomRegistry.make();
     const manager = createThreadOutboxManager({

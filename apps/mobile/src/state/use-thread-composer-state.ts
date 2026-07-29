@@ -168,7 +168,12 @@ export function useThreadComposerState() {
     });
     clearComposerDraftContent(threadKey);
     enqueuePromise.catch((error: unknown) => {
-      void mergeComposerDraftContent(threadKey, { text, attachments });
+      // Restore text via merge (idempotent) but attachments via the uncapped
+      // append: the merge path slots existing attachments first and truncates
+      // at the send limit, which would silently drop this message's images if
+      // the user attached new ones while the write was in flight.
+      void mergeComposerDraftContent(threadKey, { text, attachments: [] });
+      appendComposerDraftAttachments(threadKey, attachments);
       setPendingConnectionError(
         error instanceof Error ? error.message : "Failed to save the queued message.",
       );

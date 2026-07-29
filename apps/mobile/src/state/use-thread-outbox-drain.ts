@@ -21,7 +21,11 @@ import { toUploadChatImageAttachments } from "../lib/composerImages";
 import { randomHex } from "../lib/uuid";
 import { appAtomRegistry } from "./atom-registry";
 import { useProjects, useThreadShells } from "./entities";
-import { ensureThreadOutboxLoaded, removeThreadOutboxMessage } from "./thread-outbox";
+import {
+  confirmThreadOutboxMessageQueued,
+  ensureThreadOutboxLoaded,
+  removeThreadOutboxMessage,
+} from "./thread-outbox";
 import {
   isQueuedThreadCreationSendable,
   modelSelectionsEqual,
@@ -349,8 +353,15 @@ export function useThreadOutboxDrain(): void {
             return false;
           },
         );
-      const delivery =
-        deliveryAction === "remove"
+      // Enqueues publish optimistically before their durable write settles.
+      // Confirm the write landed (and the message wasn't rolled back) before
+      // sending, so a failed write can never chase an already-delivered turn.
+      const delivery = confirmThreadOutboxMessageQueued(nextQueuedMessage).then((queued) => {
+        if (!queued) {
+          // Rolled back by a failed write; nothing to deliver or retry.
+          return true;
+        }
+        return deliveryAction === "remove"
           ? removeQueuedMessage("[thread-outbox] failed to remove message for a missing thread")
           : creation !== undefined
             ? creationProjectCwd !== null
@@ -359,6 +370,7 @@ export function useThreadOutboxDrain(): void {
             : thread !== undefined
               ? sendQueuedMessage(nextQueuedMessage, thread)
               : Promise.resolve(false);
+      });
       void delivery
         .then((sent) => {
           if (sent) {
