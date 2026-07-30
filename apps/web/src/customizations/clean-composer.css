@@ -1,0 +1,138 @@
+/*
+ * Personal composer skin.
+ *
+ * Keep customization here instead of editing composer React components.
+ * Upstream behavior remains intact; selectors use existing semantic data and
+ * accessibility attributes. Provider logos remain visible.
+ */
+
+[data-chat-composer-form="true"] svg {
+  display: none !important;
+}
+
+/* Provider brand mark is the only composer SVG retained. */
+[data-chat-composer-form="true"]
+  [data-chat-provider-model-picker="true"]
+  > span:first-child
+  > span:first-child
+  > svg {
+  display: block !important;
+}
+
+/* Icon-only actions become compact text actions. */
+[data-chat-composer-form="true"] button[type="submit"][aria-label],
+[data-chat-composer-form="true"] button[aria-label="Stop generation"],
+[data-chat-composer-form="true"] button[aria-label="Previous question"],
+[data-chat-composer-form="true"] button[aria-label="Implementation actions"],
+[data-chat-composer-form="true"] button[aria-label="More composer controls"],
+[data-chat-composer-form="true"] button[aria-label^="Context window"] {
+  width: auto;
+  min-width: 2rem;
+  padding-inline: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+[data-chat-composer-form="true"] button[type="submit"][aria-label]::after {
+  content: "Send";
+}
+
+[data-chat-composer-form="true"] button[aria-label="Connecting"]::after {
+  content: "Connecting";
+}
+
+[data-chat-composer-form="true"] button[aria-label="Preparing worktree"]::after {
+  content: "Preparing";
+}
+
+[data-chat-composer-form="true"] button[aria-label="Sending"]::after {
+  content: "Sending";
+}
+
+[data-chat-composer-form="true"] button[aria-label="Stop generation"]::after {
+  content: "Stop";
+}
+
+[data-chat-composer-form="true"] button[aria-label="Previous question"]::after {
+  content: "Previous";
+}
+
+[data-chat-composer-form="true"] button[aria-label="Implementation actions"]::after,
+[data-chat-composer-form="true"] button[aria-label="More composer controls"]::after {
+  content: "More";
+}
+
+[data-chat-composer-form="true"] button[aria-label^="Context window"]::after {
+  content: "Context";
+}
+
+/* Attachment and context-chip actions stay understandable without glyphs. */
+[data-chat-composer-form="true"] [aria-label="Draft attachment may not persist"]::after {
+  content: "Not saved";
+  padding-inline: 0.125rem;
+  font-size: 0.5625rem;
+  font-weight: 600;
+}
+
+[data-chat-composer-form="true"] button[aria-label^="Remove "] {
+  width: auto;
+  padding-inline: 0.375rem;
+  font-size: 0.5625rem;
+}
+
+[data-chat-composer-form="true"] button[aria-label^="Remove "]::after {
+  content: "Remove";
+}
+
+[data-chat-composer-form="true"] button[aria-label^="Dismiss"] {
+  width: auto;
+  padding-inline: 0.375rem;
+  font-size: 0.5625rem;
+}
+
+[data-chat-composer-form="true"] button[aria-label^="Dismiss"]::after {
+  content: "Dismiss";
+}
+
+/* Composer command results can be portaled outside composer form. */
+[data-composer-item-id] > svg,
+[data-composer-item-id] > .lucide,
+[data-composer-item-id] > span:has(> svg) {
+  display: none !important;
+}
+
+/* Model picker is portaled. Provider marks are non-Lucide SVGs and remain. */
+[data-model-picker-content="true"] .lucide {
+  display: none !important;
+}
+
+[data-model-picker-content="true"] button[aria-label="Favorites"]::after {
+  content: "Fav";
+  font-size: 0.625rem;
+  font-weight: 600;
+}
+
+[data-model-picker-content="true"] button[aria-label="Add to favorites"]::after {
+  content: "Save";
+  font-size: 0.5625rem;
+}
+
+[data-model-picker-content="true"] button[aria-label="Remove from favorites"]::after {
+  content: "Saved";
+  font-size: 0.5625rem;
+}
+
+/* Stash menu is also portaled. */
+.dropdown-glass:has(button[aria-label="Delete stashed prompt"]) svg {
+  display: none !important;
+}
+
+button[aria-label="Delete stashed prompt"] {
+  width: auto;
+  padding-inline: 0.375rem;
+  font-size: 0.5625rem;
+}
+
+button[aria-label="Delete stashed prompt"]::after {
+  content: "Delete";
+}
